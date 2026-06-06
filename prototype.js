@@ -1,3 +1,4 @@
+(() => {
 const {
   sampleMatchData,
   samplePlayers,
@@ -363,3 +364,4 @@ function init() {
 }
 
 init();
+})();
