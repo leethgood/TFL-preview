@@ -72,6 +72,19 @@ function renderPitch(event) {
   const motionShadow = $("#motionShadow");
   const motion = event.motion || {};
   const mid = motion.mid || event.ballTo;
+  const mix = (from, to, weight) => [
+    Number((from[0] * (1 - weight) + to[0] * weight).toFixed(2)),
+    Number((from[1] * (1 - weight) + to[1] * weight).toFixed(2)),
+  ];
+  const aerialPoints = motion.aerialPoints || [
+    mix(event.ballFrom, mid, 0.22),
+    mix(event.ballFrom, mid, 0.45),
+    mix(event.ballFrom, mid, 0.72),
+    mix(mid, event.ballTo, 0.08),
+    mix(mid, event.ballTo, 0.18),
+    mix(mid, event.ballTo, 0.42),
+    mix(mid, event.ballTo, 0.66),
+  ];
 
   pitch.dataset.event = event.id;
   pitch.dataset.motion = motion.kind || "ground";
@@ -81,9 +94,15 @@ function renderPitch(event) {
   pitch.style.setProperty("--ball-mid-y", `${mid[1]}%`);
   pitch.style.setProperty("--ball-to-x", `${event.ballTo[0]}%`);
   pitch.style.setProperty("--ball-to-y", `${event.ballTo[1]}%`);
+  pitch.style.setProperty("--ball-touch-x", `${motion.touch?.[0] || mid[0]}%`);
+  pitch.style.setProperty("--ball-touch-y", `${motion.touch?.[1] || mid[1]}%`);
   pitch.style.setProperty("--ball-duration", `${motion.duration || 1120}ms`);
   pitch.style.setProperty("--ball-ease", motion.ease || "cubic-bezier(0.22, 0.78, 0.24, 1)");
   pitch.style.setProperty("--ball-scale-mid", motion.scale || 1.08);
+  aerialPoints.forEach((point, index) => {
+    pitch.style.setProperty(`--ball-a${index + 1}-x`, `${point[0]}%`);
+    pitch.style.setProperty(`--ball-a${index + 1}-y`, `${point[1]}%`);
+  });
 
   routePath.setAttribute("d", event.routePath);
   routeSpark.style.left = `${event.ballTo[0]}%`;
@@ -92,14 +111,14 @@ function renderPitch(event) {
   actors.innerHTML = event.actors
     .map((actor) => {
       const player = playerById(actor.playerId);
-      const showCard = actor.core || actor.option || actor.card;
+      const showCard = actor.core || actor.card;
       const keeper = actor.keeper ? " keeper" : "";
       const option = actor.option ? " pass-option" : "";
       const defenderCard = actor.defenderCard ? " defender-card" : "";
       const moving = actor.from ? " moving" : "";
       const hasCard = showCard ? " has-card" : "";
+      const cardAnchor = showCard ? ` card-${actor.cardAnchor || "top"}` : "";
       const team = player.team;
-      const cardOffset = actor.cardOffset || [0, -66];
       const from = actor.from || [actor.x, actor.y];
       const actorDuration = actor.duration || motion.duration || 1120;
       const actorStyle = [
@@ -108,13 +127,11 @@ function renderPitch(event) {
         `--actor-from-x:${from[0]}%`,
         `--actor-from-y:${from[1]}%`,
         `--actor-duration:${actorDuration}ms`,
-        `--card-dx:${cardOffset[0]}px`,
-        `--card-dy:${cardOffset[1]}px`,
       ].join("; ");
 
       if (showCard) {
         return `
-          <article class="actor ${team}${keeper}${option}${defenderCard}${moving}${hasCard}" style="${actorStyle}">
+          <article class="actor ${team}${keeper}${option}${defenderCard}${moving}${hasCard}${cardAnchor}" style="${actorStyle}">
             <span class="pawn">${player.number}</span>
             <div class="actor-card">
               <b>${player.label}</b>
@@ -125,7 +142,7 @@ function renderPitch(event) {
       }
 
       return `
-        <span class="actor ${team}${keeper}${moving}" style="${actorStyle}">
+        <span class="actor ${team}${keeper}${option}${moving}" style="${actorStyle}">
           <span class="pawn">${player.number}</span>
           <span class="actor-role">${actor.role}</span>
         </span>
