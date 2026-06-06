@@ -1,0 +1,198 @@
+const sampleMatchData = {
+  homeTeam: {
+    name: "TFL HOME",
+    formation: "4-2-3-1",
+    color: "home",
+  },
+  awayTeam: {
+    name: "TFL AWAY",
+    formation: "4-3-3",
+    color: "away",
+  },
+  status: "LIVE",
+  substitutionsLeft: 3,
+};
+
+const samplePlayers = [
+  { id: "home-gk", team: "home", number: 1, label: "GK-1", position: "GK", stamina: 91, condition: "A", status: "정상", focus: 90, formation: [50, 90] },
+  { id: "home-cb4", team: "home", number: 4, label: "CB-4", position: "CB", stamina: 83, condition: "B", status: "정상", focus: 88, formation: [38, 76] },
+  { id: "home-dm6", team: "home", number: 6, label: "DM-6", position: "DM", stamina: 51, condition: "C", status: "부상 위험", focus: 66, formation: [42, 58] },
+  { id: "home-am10", team: "home", number: 10, label: "AM-10", position: "AM", stamina: 74, condition: "A", status: "경고 1", focus: 79, formation: [50, 38] },
+  { id: "home-st9", team: "home", number: 9, label: "ST-9", position: "ST", stamina: 68, condition: "B", status: "정상", focus: 82, formation: [50, 18] },
+  { id: "home-wm7", team: "home", number: 7, label: "WM-7", position: "WM", stamina: 72, condition: "B", status: "정상", focus: 76, formation: [24, 40] },
+  { id: "away-gk", team: "away", number: 1, label: "GK-1", position: "GK", stamina: 88, condition: "A", status: "정상", focus: 87, formation: [50, 10] },
+  { id: "away-cb5", team: "away", number: 5, label: "CB-5", position: "CB", stamina: 79, condition: "B", status: "정상", focus: 81, formation: [58, 26] },
+  { id: "away-fb3", team: "away", number: 3, label: "FB-3", position: "FB", stamina: 63, condition: "C", status: "압박 대응", focus: 70, formation: [74, 30] },
+  { id: "away-dm8", team: "away", number: 8, label: "DM-8", position: "DM", stamina: 76, condition: "B", status: "정상", focus: 77, formation: [58, 46] },
+];
+
+const sampleBenchPlayers = [
+  { id: "bench-12", number: 12, label: "B-12", position: "ST", stamina: 96, condition: "B", status: "공격 옵션" },
+  { id: "bench-08", number: 8, label: "B-08", position: "CM", stamina: 92, condition: "A", status: "교체 후보" },
+  { id: "bench-21", number: 21, label: "B-21", position: "FB", stamina: 89, condition: "B", status: "부상 위험 낮음" },
+  { id: "bench-04", number: 4, label: "B-04", position: "CB", stamina: 87, condition: "B", status: "수비 안정" },
+];
+
+const sampleEvents = [
+  {
+    id: "dribble",
+    type: "드리블",
+    badge: "DRIBBLE",
+    time: "63:30",
+    clock: "후반 63:30",
+    score: [1, 1],
+    subtitle: "공 소유 선수와 압박 수비수만 표시",
+    commentary: "AM-10이 중앙에서 압박을 버티며 전진합니다.",
+    routePath: "M38 31 C43 26 49 25 55 28",
+    ballFrom: [38, 52],
+    ballTo: [55, 49],
+    zone: [36, 37, 25, 26],
+    actors: [
+      { playerId: "home-am10", role: "공 소유", x: 38, y: 52, core: true },
+      { playerId: "away-dm8", role: "압박 수비", x: 49, y: 46, core: false },
+    ],
+  },
+  {
+    id: "tackle",
+    type: "태클",
+    badge: "TACKLE",
+    time: "66:00",
+    clock: "후반 66:00",
+    score: [1, 1],
+    subtitle: "공 소유 선수와 태클 시도 선수 표시",
+    commentary: "DM-8이 태클을 시도하지만 AM-10이 공을 지켜냅니다.",
+    routePath: "M47 29 C50 29 53 29 56 30",
+    ballFrom: [47, 52],
+    ballTo: [56, 53],
+    zone: [43, 39, 22, 24],
+    actors: [
+      { playerId: "home-am10", role: "공 소유", x: 47, y: 52, core: true },
+      { playerId: "away-dm8", role: "태클 시도", x: 55, y: 52, core: true },
+    ],
+  },
+  {
+    id: "pass",
+    type: "패스",
+    badge: "PASS",
+    time: "68:15",
+    clock: "후반 68:15",
+    score: [1, 1],
+    subtitle: "패스한 선수와 패스 받을 선수 표시",
+    commentary: "AM-10이 박스 앞 ST-9에게 짧고 빠른 패스를 넣습니다.",
+    routePath: "M48 31 C56 25 62 25 69 30",
+    ballFrom: [48, 53],
+    ballTo: [69, 48],
+    zone: [51, 34, 25, 28],
+    actors: [
+      { playerId: "home-am10", role: "패스", x: 48, y: 53, core: true },
+      { playerId: "home-st9", role: "받을 선수", x: 69, y: 48, core: true },
+      { playerId: "away-cb5", role: "마크", x: 75, y: 43, core: false },
+    ],
+  },
+  {
+    id: "cross",
+    type: "크로스",
+    badge: "CROSS",
+    time: "71:00",
+    clock: "후반 71:00",
+    score: [1, 1],
+    subtitle: "크로스 선수, 타깃, 마크 수비수, 골키퍼 표시",
+    commentary: "WM-7이 왼쪽에서 박스 안으로 크로스를 올립니다.",
+    routePath: "M59 45 C70 18 82 21 89 31",
+    ballFrom: [59, 79],
+    ballTo: [89, 55],
+    zone: [77, 29, 17, 36],
+    actors: [
+      { playerId: "home-wm7", role: "크로스", x: 59, y: 79, core: true },
+      { playerId: "home-st9", role: "타깃", x: 84, y: 52, core: true },
+      { playerId: "away-cb5", role: "마크", x: 88, y: 48, core: false },
+      { playerId: "away-gk", role: "골키퍼", x: 94, y: 50, core: false, keeper: true },
+    ],
+  },
+  {
+    id: "shot",
+    type: "슛",
+    badge: "SHOT",
+    time: "72:15",
+    clock: "후반 72:15",
+    score: [1, 1],
+    subtitle: "슈팅 선수, 가까운 수비수, 골키퍼 표시",
+    commentary: "ST-9이 오른발 슈팅을 시도합니다. 골문 안쪽으로 향합니다.",
+    routePath: "M78 31 C84 27 90 27 96 29",
+    ballFrom: [78, 52],
+    ballTo: [96, 48],
+    zone: [76, 30, 20, 36],
+    actors: [
+      { playerId: "home-st9", role: "슈팅", x: 78, y: 52, core: true },
+      { playerId: "away-cb5", role: "가까운 수비", x: 82, y: 45, core: false },
+      { playerId: "away-gk", role: "골키퍼", x: 94, y: 50, core: true, keeper: true },
+    ],
+  },
+  {
+    id: "goal",
+    type: "골",
+    badge: "GOAL",
+    time: "78:00",
+    clock: "후반 78:00",
+    score: [2, 1],
+    subtitle: "득점 선수, 어시스트 선수, 골키퍼 표시",
+    commentary: "골! ST-9이 마무리합니다. 홈팀이 다시 앞서갑니다.",
+    routePath: "M76 33 C86 24 94 27 99 31",
+    ballFrom: [76, 53],
+    ballTo: [98, 50],
+    zone: [78, 28, 20, 40],
+    actors: [
+      { playerId: "home-st9", role: "득점", x: 76, y: 53, core: true },
+      { playerId: "home-am10", role: "어시스트", x: 63, y: 62, core: true },
+      { playerId: "away-gk", role: "골키퍼", x: 94, y: 50, core: false, keeper: true },
+    ],
+  },
+];
+
+const sampleStats = {
+  possession: [54, 46],
+  shots: [9, 6],
+  shotsOnTarget: [4, 3],
+  chances: [5, 3],
+  saves: [2, 3],
+  direction: { left: 23, middle: 49, right: 28 },
+  momentum: [35, 52, 44, 66, 78, 58, 72, 49],
+  playerStats: [
+    { label: "ST-9", rating: "7.4", shots: 3, chances: 2, status: "득점" },
+    { label: "AM-10", rating: "7.1", shots: 1, chances: 3, status: "어시스트" },
+    { label: "GK-1", rating: "7.8", shots: 0, chances: 0, status: "선방 2" },
+  ],
+};
+
+const sampleTactics = {
+  name: "중앙 압박 후 빠른 전개",
+  gauge: 72,
+  sliders: [
+    { label: "공격 성향", value: 68 },
+    { label: "수비 라인", value: 56 },
+    { label: "압박 강도", value: 74 },
+    { label: "패스 성향", value: 42 },
+  ],
+  directions: ["중앙", "좌측", "우측", "롱볼"],
+  activeDirection: "중앙",
+  summary: [
+    ["공격", "빠른 중앙 침투"],
+    ["수비", "중간 라인 유지"],
+    ["압박", "상대 빌드업 차단"],
+  ],
+  skills: [
+    { name: "압박 강화", cooldown: "READY" },
+    { name: "역습 지시", cooldown: "02:30" },
+    { name: "집중 회복", cooldown: "05:10" },
+    { name: "수비 정렬", cooldown: "READY" },
+  ],
+};
+
+window.TFL_SAMPLE_DATA = {
+  sampleMatchData,
+  samplePlayers,
+  sampleBenchPlayers,
+  sampleEvents,
+  sampleStats,
+  sampleTactics,
+};
