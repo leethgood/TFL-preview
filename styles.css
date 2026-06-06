@@ -406,6 +406,7 @@ h1 {
 .route-spark {
   left: var(--ball-to-x);
   top: var(--ball-to-y);
+  display: none;
   width: 40px;
   height: 40px;
   border: 2px solid var(--gold);
@@ -498,7 +499,7 @@ h1 {
 }
 
 .actor.moving {
-  animation: actorAdvance var(--actor-duration, 1120ms) steps(6, end) both;
+  animation: actorAdvance var(--actor-duration, 1120ms) cubic-bezier(0.2, 0.74, 0.24, 1) both;
 }
 
 .actor.card-top {
@@ -555,14 +556,14 @@ h1 {
 .actor.pass-option .pawn {
   width: 28px;
   height: 28px;
-  border-color: rgba(244, 201, 93, 0.86);
-  color: var(--gold);
-  background: rgba(16, 26, 29, 0.96);
+  border-color: rgba(255, 255, 255, 0.78);
+  color: #06110f;
+  background: var(--home);
 }
 
 .actor.pass-option .actor-role {
   top: calc(100% + 3px);
-  color: var(--gold);
+  color: var(--text);
   font-size: 10px;
 }
 
@@ -1038,22 +1039,22 @@ time {
   20% {
     left: var(--ball-touch-x);
     top: var(--ball-touch-y);
-    transform: translate(-36%, -54%) scale(1.02);
+    transform: translate(-50%, -50%) scale(1.02);
   }
   40% {
     left: var(--ball-mid-x);
     top: var(--ball-mid-y);
-    transform: translate(-52%, -48%) scale(0.98);
+    transform: translate(-50%, -50%) scale(0.98);
   }
   60% {
     left: var(--ball-touch-x);
     top: var(--ball-touch-y);
-    transform: translate(-34%, -54%) scale(1.02);
+    transform: translate(-50%, -50%) scale(1.02);
   }
   80% {
     left: var(--ball-mid-x);
     top: var(--ball-mid-y);
-    transform: translate(-52%, -48%) scale(0.98);
+    transform: translate(-50%, -50%) scale(0.98);
   }
   100% {
     left: var(--ball-to-x);
@@ -1137,7 +1138,7 @@ time {
   65% {
     left: var(--ball-mid-x);
     top: var(--ball-mid-y);
-    transform: translate(-50%, -62%) scale(0.88);
+    transform: translate(-50%, -50%) scale(0.88);
   }
   100% {
     left: var(--ball-to-x);
