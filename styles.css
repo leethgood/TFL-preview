@@ -1089,37 +1089,37 @@ time {
   12% {
     left: var(--ball-a1-x);
     top: var(--ball-a1-y);
-    transform: translate(-50%, -82%) scale(1.1);
+    transform: translate(-50%, -50%) scale(1.1);
   }
   25% {
     left: var(--ball-a2-x);
     top: var(--ball-a2-y);
-    transform: translate(-50%, -104%) scale(1.22);
+    transform: translate(-50%, -50%) scale(1.22);
   }
   38% {
     left: var(--ball-a3-x);
     top: var(--ball-a3-y);
-    transform: translate(-50%, -124%) scale(1.35);
+    transform: translate(-50%, -50%) scale(1.35);
   }
   50% {
     left: var(--ball-mid-x);
     top: var(--ball-mid-y);
-    transform: translate(-50%, -136%) scale(1.5);
+    transform: translate(-50%, -50%) scale(1.5);
   }
   62% {
     left: var(--ball-a5-x);
     top: var(--ball-a5-y);
-    transform: translate(-50%, -122%) scale(1.35);
+    transform: translate(-50%, -50%) scale(1.35);
   }
   75% {
     left: var(--ball-a6-x);
     top: var(--ball-a6-y);
-    transform: translate(-50%, -104%) scale(1.22);
+    transform: translate(-50%, -50%) scale(1.22);
   }
   88% {
     left: var(--ball-a7-x);
     top: var(--ball-a7-y);
-    transform: translate(-50%, -82%) scale(1.1);
+    transform: translate(-50%, -50%) scale(1.1);
   }
   100% {
     left: var(--ball-to-x);

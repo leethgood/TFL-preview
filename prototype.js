@@ -76,15 +76,19 @@ function renderPitch(event) {
     Number((from[0] * (1 - weight) + to[0] * weight).toFixed(2)),
     Number((from[1] * (1 - weight) + to[1] * weight).toFixed(2)),
   ];
-  const aerialPoints = motion.aerialPoints || [
-    mix(event.ballFrom, mid, 0.22),
-    mix(event.ballFrom, mid, 0.45),
-    mix(event.ballFrom, mid, 0.72),
-    mix(mid, event.ballTo, 0.08),
-    mix(mid, event.ballTo, 0.18),
-    mix(mid, event.ballTo, 0.42),
-    mix(mid, event.ballTo, 0.66),
-  ];
+  const aerialPoints = motion.aerialPoints || (
+    motion.kind === "aerial"
+      ? [0.12, 0.25, 0.38, 0.5, 0.62, 0.75, 0.88].map((weight) => mix(event.ballFrom, event.ballTo, weight))
+      : [
+          mix(event.ballFrom, mid, 0.22),
+          mix(event.ballFrom, mid, 0.45),
+          mix(event.ballFrom, mid, 0.72),
+          mix(mid, event.ballTo, 0.08),
+          mix(mid, event.ballTo, 0.18),
+          mix(mid, event.ballTo, 0.42),
+          mix(mid, event.ballTo, 0.66),
+        ]
+  );
 
   pitch.dataset.event = event.id;
   pitch.dataset.motion = motion.kind || "ground";
