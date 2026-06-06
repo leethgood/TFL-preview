@@ -66,36 +66,56 @@ function restartElementAnimation(element) {
 function renderPitch(event) {
   const pitch = $("#pitchStage");
   const routePath = $("#routePath");
-  const focusZone = $("#focusZone");
   const actors = $("#pitchActors");
   const ball = $("#ball");
   const routeSpark = $("#routeSpark");
+  const motionShadow = $("#motionShadow");
+  const motion = event.motion || {};
+  const mid = motion.mid || event.ballTo;
 
   pitch.dataset.event = event.id;
+  pitch.dataset.motion = motion.kind || "ground";
   pitch.style.setProperty("--ball-from-x", `${event.ballFrom[0]}%`);
   pitch.style.setProperty("--ball-from-y", `${event.ballFrom[1]}%`);
+  pitch.style.setProperty("--ball-mid-x", `${mid[0]}%`);
+  pitch.style.setProperty("--ball-mid-y", `${mid[1]}%`);
   pitch.style.setProperty("--ball-to-x", `${event.ballTo[0]}%`);
   pitch.style.setProperty("--ball-to-y", `${event.ballTo[1]}%`);
-  pitch.style.setProperty("--zone-x", `${event.zone[0]}%`);
-  pitch.style.setProperty("--zone-y", `${event.zone[1]}%`);
-  pitch.style.setProperty("--zone-w", `${event.zone[2]}%`);
-  pitch.style.setProperty("--zone-h", `${event.zone[3]}%`);
+  pitch.style.setProperty("--ball-duration", `${motion.duration || 1120}ms`);
+  pitch.style.setProperty("--ball-ease", motion.ease || "cubic-bezier(0.22, 0.78, 0.24, 1)");
+  pitch.style.setProperty("--ball-scale-mid", motion.scale || 1.08);
 
   routePath.setAttribute("d", event.routePath);
-  focusZone.setAttribute("aria-label", event.subtitle);
   routeSpark.style.left = `${event.ballTo[0]}%`;
   routeSpark.style.top = `${event.ballTo[1]}%`;
 
   actors.innerHTML = event.actors
     .map((actor) => {
       const player = playerById(actor.playerId);
-      const core = actor.core;
+      const showCard = actor.core || actor.option || actor.card;
       const keeper = actor.keeper ? " keeper" : "";
+      const option = actor.option ? " pass-option" : "";
+      const defenderCard = actor.defenderCard ? " defender-card" : "";
+      const moving = actor.from ? " moving" : "";
+      const hasCard = showCard ? " has-card" : "";
       const team = player.team;
+      const cardOffset = actor.cardOffset || [0, -66];
+      const from = actor.from || [actor.x, actor.y];
+      const actorDuration = actor.duration || motion.duration || 1120;
+      const actorStyle = [
+        `--x:${actor.x}%`,
+        `--y:${actor.y}%`,
+        `--actor-from-x:${from[0]}%`,
+        `--actor-from-y:${from[1]}%`,
+        `--actor-duration:${actorDuration}ms`,
+        `--card-dx:${cardOffset[0]}px`,
+        `--card-dy:${cardOffset[1]}px`,
+      ].join("; ");
 
-      if (core) {
+      if (showCard) {
         return `
-          <article class="actor ${team}${keeper}" style="--x:${actor.x}%; --y:${actor.y}%">
+          <article class="actor ${team}${keeper}${option}${defenderCard}${moving}${hasCard}" style="${actorStyle}">
+            <span class="pawn">${player.number}</span>
             <div class="actor-card">
               <b>${player.label}</b>
               <small>${actor.role} / ${player.position}</small>
@@ -105,7 +125,7 @@ function renderPitch(event) {
       }
 
       return `
-        <span class="actor ${team}${keeper}" style="--x:${actor.x}%; --y:${actor.y}%">
+        <span class="actor ${team}${keeper}${moving}" style="${actorStyle}">
           <span class="pawn">${player.number}</span>
           <span class="actor-role">${actor.role}</span>
         </span>
@@ -116,7 +136,8 @@ function renderPitch(event) {
   restartElementAnimation(ball);
   restartElementAnimation(routePath);
   restartElementAnimation(routeSpark);
-  restartElementAnimation(focusZone);
+  restartElementAnimation(motionShadow);
+  $$(".actor.moving").forEach(restartElementAnimation);
 }
 
 function renderFocusCards(event) {
