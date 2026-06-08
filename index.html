@@ -3,248 +3,101 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TFL Match Viewer Interactive Prototype</title>
-    <link rel="stylesheet" href="./styles.css?v=match-viewer-v04" />
+    <title>TFL Play Focus View MVP</title>
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="prototype-shell">
-      <header class="prototype-header">
-        <div>
-          <p class="eyebrow">Tactics Football Live</p>
-          <h1>경기 관전 UI 1차 인터랙티브 프로토타입</h1>
-        </div>
-        <p class="prototype-note">샘플 데이터 기반 / DB, API, 경기엔진 연동 없음</p>
+    <main class="app-shell" data-play-focus-view>
+      <header class="scoreboard" aria-label="Scoreboard">
+        <section class="team home">
+          <span data-home-name></span>
+          <strong data-home-score></strong>
+        </section>
+        <section class="match-center">
+          <span class="status" data-status></span>
+          <strong><span data-clock></span></strong>
+          <span data-phase></span>
+        </section>
+        <section class="team away">
+          <strong data-away-score></strong>
+          <span data-away-name></span>
+        </section>
       </header>
 
-      <article class="match-app" aria-label="TFL 경기 관전 프로토타입">
-        <header class="scoreboard">
-          <section class="team team-home" aria-label="홈팀">
-            <span class="team-mark"></span>
-            <div>
-              <strong id="homeTeamName">TFL HOME</strong>
-              <span id="homeFormation">4-2-3-1</span>
+      <section class="scene-grid">
+        <section class="focus-board" aria-label="Play Focus View">
+          <div class="event-strip" data-event-nav></div>
+
+          <div class="pitch-card">
+            <div class="pitch-header">
+              <span data-event-type></span>
+              <strong data-route></strong>
             </div>
+            <div class="pitch" data-pitch>
+              <div class="half-line"></div>
+              <div class="center-circle"></div>
+              <div class="box left"></div>
+              <div class="box right"></div>
+              <div class="goal left"></div>
+              <div class="goal right"></div>
+              <div class="pitch-overlay" data-pitch-overlay></div>
+            </div>
+          </div>
+
+          <section class="focus-details" aria-label="Current event details">
+            <div data-actor-panel></div>
+            <div data-target-panel></div>
+            <div class="supporters" data-supporters-panel></div>
+          </section>
+        </section>
+
+        <aside class="side-panel" aria-label="Broadcast and stats">
+          <section class="broadcast-panel">
+            <div class="panel-title">
+              <span>Broadcast</span>
+              <strong data-stat-effect></strong>
+            </div>
+            <p class="lead-commentary" data-commentary-lead></p>
+            <ul class="commentary-list" data-commentary></ul>
           </section>
 
-          <section class="score-center" aria-label="스코어보드">
-            <div class="scoreline">
-              <span id="homeScore">0</span>
-              <em>-</em>
-              <span id="awayScore">0</span>
+          <section class="stats-panel">
+            <div class="panel-title">
+              <span>Match Stats</span>
+              <strong data-ball-path></strong>
             </div>
-            <div class="match-clock">
-              <strong id="matchClock">전반 00:00</strong>
-              <span id="matchStatus">READY</span>
-            </div>
+            <ul class="stat-list" data-stats></ul>
           </section>
+        </aside>
+      </section>
 
-          <section class="team team-away" aria-label="원정팀">
-            <div>
-              <strong id="awayTeamName">TFL AWAY</strong>
-              <span id="awayFormation">4-3-3</span>
-            </div>
-            <span class="team-mark"></span>
-          </section>
-        </header>
-
-        <nav class="game-tabs" aria-label="인게임 탭">
-          <button class="active" type="button" data-tab="live" aria-selected="true">LIVE</button>
-          <button type="button" data-tab="squad" aria-selected="false">선수·교체</button>
-          <button type="button" data-tab="tactics" aria-selected="false">작전·전술</button>
-          <button type="button" data-tab="analysis" aria-selected="false">기록·분석</button>
-        </nav>
-
-        <section class="tab-panel active" data-panel="live" aria-label="LIVE 탭">
-          <div class="live-grid">
-            <section class="pitch-card" aria-label="Play Focus View 경기장">
-              <div class="panel-head">
-                <div>
-                  <strong>Play Focus View</strong>
-                  <span id="focusSubtitle">현재 이벤트 중심 표시</span>
-                </div>
-                <b id="eventBadge" class="event-badge">DRIBBLE</b>
-              </div>
-
-              <div class="pitch-stage" id="pitchStage" data-event="dribble">
-                <div class="half-line"></div>
-                <div class="center-circle"></div>
-                <div class="box box-left"></div>
-                <div class="box box-right"></div>
-                <div class="goal goal-left"></div>
-                <div class="goal goal-right"></div>
-                <svg class="route-svg" id="routeSvg" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true">
-                  <path id="routePath" d="M30 30 C45 20 58 22 72 28" />
-                </svg>
-                <div class="route-spark" id="routeSpark"></div>
-                <div class="motion-shadow" id="motionShadow"></div>
-                <div class="ball" id="ball"></div>
-                <div class="goal-flash" id="goalFlash">GOAL</div>
-                <div id="pitchActors"></div>
-              </div>
-            </section>
-
-            <aside class="live-side" aria-label="LIVE 정보">
-              <section class="panel event-control-panel">
-                <div class="panel-head">
-                  <strong>샘플 이벤트</strong>
-                  <span>드리블 / 태클 / 패스 / 크로스 / 슛 / 골</span>
-                </div>
-                <div class="event-buttons" id="eventButtons"></div>
-                <div class="playback-controls">
-                  <button type="button" id="prevEvent">이전</button>
-                  <button type="button" id="togglePlay">재생</button>
-                  <button type="button" id="nextEvent">다음</button>
-                </div>
-              </section>
-
-              <section class="panel">
-                <div class="panel-head">
-                  <strong>핵심 선수</strong>
-                  <span>카드 UI 강조</span>
-                </div>
-                <div class="focus-cards" id="focusCards"></div>
-              </section>
-
-              <section class="panel">
-                <div class="panel-head">
-                  <strong>샘플 경기 기록</strong>
-                  <span>sampleStats</span>
-                </div>
-                <div id="liveStats" class="stat-stack"></div>
-              </section>
-            </aside>
+      <section class="bottom-grid">
+        <section class="timeline-panel" aria-label="Event timeline">
+          <div class="panel-title">
+            <span>Timeline</span>
+            <strong>Pitch scenes and flow labels</strong>
           </div>
-
-          <div class="live-bottom">
-            <section class="panel broadcast-panel">
-              <div class="panel-head">
-                <strong>텍스트 중계</strong>
-                <span>현재 이벤트와 연결</span>
-              </div>
-              <ol class="broadcast-list" id="broadcastList"></ol>
-            </section>
-
-            <section class="panel timeline-panel">
-              <div class="panel-head">
-                <strong>이벤트 타임라인</strong>
-                <span>선택 시 Play Focus View 갱신</span>
-              </div>
-              <div class="timeline" id="eventTimeline"></div>
-            </section>
-          </div>
+          <div class="timeline-list" data-timeline></div>
         </section>
 
-        <section class="tab-panel" data-panel="squad" aria-label="선수·교체 탭">
-          <div class="squad-grid">
-            <section class="formation-card">
-              <div class="panel-head">
-                <strong>현재 포메이션</strong>
-                <span>samplePlayers</span>
-              </div>
-              <div class="formation-board" id="formationBoard"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head">
-                <strong>출전 선수 상태</strong>
-                <span>체력 / 컨디션 / 상태</span>
-              </div>
-              <div class="player-table" id="playerStatusTable"></div>
-            </section>
-
-            <aside class="panel">
-              <div class="panel-head">
-                <strong>교체 후보</strong>
-                <span id="subsLeft">남은 교체 3회</span>
-              </div>
-              <div class="bench-list" id="benchList"></div>
-              <div class="swap-box">
-                <span>OUT DM-6</span>
-                <b>→</b>
-                <span>IN B-08</span>
-              </div>
-              <button class="ghost-button" type="button">교체 예약 UI</button>
-            </aside>
-          </div>
+        <section class="controls" aria-label="Playback controls">
+          <button type="button" data-prev>Prev</button>
+          <button type="button" data-play>Play</button>
+          <button type="button" data-next>Next</button>
+          <button type="button" data-replay>Replay</button>
+          <label>
+            Speed
+            <select data-speed>
+              <option value="3400">Slow</option>
+              <option value="2600" selected>Normal</option>
+              <option value="1500">Fast</option>
+            </select>
+          </label>
         </section>
-
-        <section class="tab-panel" data-panel="tactics" aria-label="작전·전술 탭">
-          <div class="tactics-grid">
-            <section class="panel">
-              <div class="panel-head">
-                <strong>현재 전술</strong>
-                <span id="tacticName">중앙 압박 후 빠른 전개</span>
-              </div>
-              <div class="tactic-sliders" id="tacticSliders"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head">
-                <strong>공격 방향 지시</strong>
-                <span>정적 샘플 상태</span>
-              </div>
-              <div class="direction-buttons" id="directionButtons"></div>
-              <div class="large-gauge"><i id="tacticGauge"></i></div>
-              <div class="tactic-summary" id="tacticSummary"></div>
-            </section>
-
-            <aside class="panel">
-              <div class="panel-head">
-                <strong>감독 스킬 슬롯</strong>
-                <span>sampleTactics</span>
-              </div>
-              <div class="skill-list" id="skillList"></div>
-            </aside>
-          </div>
-        </section>
-
-        <section class="tab-panel" data-panel="analysis" aria-label="기록·분석 탭">
-          <div class="analysis-grid">
-            <section class="panel">
-              <div class="panel-head">
-                <strong>팀 상세 기록</strong>
-                <span>Home / Away</span>
-              </div>
-              <div class="stat-stack" id="analysisStats"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head">
-                <strong>선수별 기록</strong>
-                <span>샘플 데이터</span>
-              </div>
-              <div class="player-table compact" id="playerStatsTable"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head">
-                <strong>공격 방향 비율</strong>
-                <span>좌 / 중앙 / 우</span>
-              </div>
-              <div class="direction-map" id="directionMap"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head">
-                <strong>Momentum 흐름</strong>
-                <span>샘플형</span>
-              </div>
-              <div class="momentum-chart" id="momentumChart"></div>
-            </section>
-
-            <section class="panel analysis-wide">
-              <div class="panel-head">
-                <strong>주요 이벤트 요약</strong>
-                <span>finalResultSummary 아님</span>
-              </div>
-              <div class="analysis-events" id="analysisEvents"></div>
-            </section>
-          </div>
-        </section>
-      </article>
+      </section>
     </main>
 
-    <script src="./sample-data.js?v=match-viewer-v04"></script>
-    <script src="./prototype.js?v=match-viewer-v04"></script>
+    <script src="./sample-events.js"></script>
+    <script src="./play-focus-view.js"></script>
   </body>
 </html>
