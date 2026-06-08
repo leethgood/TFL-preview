@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TFL Play Focus View MVP</title>
+    <title>TFL 플레이 포커스 뷰 MVP</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="app-shell" data-play-focus-view>
-      <header class="scoreboard" aria-label="Scoreboard">
+      <header class="scoreboard" aria-label="경기 점수판">
         <section class="team home">
           <span data-home-name></span>
           <strong data-home-score></strong>
@@ -24,8 +24,16 @@
         </section>
       </header>
 
+      <section class="guide-panel" aria-label="이 화면에서 확인할 것">
+        <strong>이 화면에서 확인할 것</strong>
+        <p>
+          경기 이벤트 6종이 선수 / 공 이동 / 중계 / 타임라인으로 어떻게 연결되는지
+          확인하는 MVP입니다.
+        </p>
+      </section>
+
       <section class="scene-grid">
-        <section class="focus-board" aria-label="Play Focus View">
+        <section class="focus-board" aria-label="플레이 포커스 뷰">
           <div class="event-strip" data-event-nav></div>
 
           <div class="pitch-card">
@@ -51,10 +59,10 @@
           </section>
         </section>
 
-        <aside class="side-panel" aria-label="Broadcast and stats">
+        <aside class="side-panel" aria-label="중계와 경기 기록">
           <section class="broadcast-panel">
             <div class="panel-title">
-              <span>Broadcast</span>
+              <span>텍스트 중계</span>
               <strong data-stat-effect></strong>
             </div>
             <p class="lead-commentary" data-commentary-lead></p>
@@ -63,7 +71,7 @@
 
           <section class="stats-panel">
             <div class="panel-title">
-              <span>Match Stats</span>
+              <span>경기 기록</span>
               <strong data-ball-path></strong>
             </div>
             <ul class="stat-list" data-stats></ul>
@@ -74,23 +82,23 @@
       <section class="bottom-grid">
         <section class="timeline-panel" aria-label="Event timeline">
           <div class="panel-title">
-            <span>Timeline</span>
-            <strong>Pitch scenes and flow labels</strong>
+            <span>이벤트 타임라인</span>
+            <strong>경기장 장면과 흐름 표시</strong>
           </div>
           <div class="timeline-list" data-timeline></div>
         </section>
 
-        <section class="controls" aria-label="Playback controls">
-          <button type="button" data-prev>Prev</button>
-          <button type="button" data-play>Play</button>
-          <button type="button" data-next>Next</button>
-          <button type="button" data-replay>Replay</button>
+        <section class="controls" aria-label="재생 컨트롤">
+          <button type="button" data-prev>이전</button>
+          <button type="button" data-play>재생</button>
+          <button type="button" data-next>다음</button>
+          <button type="button" data-replay>처음부터</button>
           <label>
-            Speed
+            재생 속도
             <select data-speed>
-              <option value="3400">Slow</option>
-              <option value="2600" selected>Normal</option>
-              <option value="1500">Fast</option>
+              <option value="3400">느리게</option>
+              <option value="2600" selected>보통</option>
+              <option value="1500">빠르게</option>
             </select>
           </label>
         </section>

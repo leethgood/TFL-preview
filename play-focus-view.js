@@ -16,6 +16,48 @@ const ANCHOR_SLOTS = Object.freeze({
   goalMouth: { x: 93, y: 50 },
 });
 
+const EVENT_TYPE_LABELS = Object.freeze({
+  ATTACK_CREATED: "공격 시작",
+  CHANCE_CREATED: "기회 생성",
+  DRIBBLE: "드리블",
+  TACKLE: "태클",
+  SHORT_PASS: "짧은 패스",
+  CROSS: "크로스",
+  SHOT: "슈팅",
+  SHOT_ON_TARGET: "유효 슈팅",
+  SAVE: "선방",
+  GOAL: "골",
+  FOUL: "파울",
+});
+
+const MATCH_STATUS_LABELS = Object.freeze({
+  LIVE: "진행 중",
+  READY: "대기",
+  FINISHED: "종료",
+});
+
+const MATCH_PHASE_LABELS = Object.freeze({
+  FIRST_HALF: "전반",
+  SECOND_HALF: "후반",
+});
+
+const PATH_STYLE_LABELS = Object.freeze({
+  DIRECT_CARRY: "직선 드리블",
+  CONTACT_WIN: "태클 후 소유권 전환",
+  STRAIGHT_PASS: "짧은 직선 패스",
+  ARC_DELIVERY: "휘어지는 크로스",
+  DIRECT_SHOT: "직선 슈팅",
+  DIRECT_FINISH: "득점 마무리",
+});
+
+const STAT_ROWS = Object.freeze([
+  Object.freeze({ key: "possession", label: "점유율", home: "possession", away: "possession", suffix: "%" }),
+  Object.freeze({ key: "shots", label: "슈팅", home: "shots", away: "shots" }),
+  Object.freeze({ key: "shotsOnTarget", label: "유효 슈팅", home: "shotsOnTarget", away: "shotsOnTarget" }),
+  Object.freeze({ key: "chances", label: "기회", home: "chances", away: "chances" }),
+  Object.freeze({ key: "saves", label: "선방", home: "saves", away: "saves" }),
+]);
+
 function getAnchor(slot) {
   return ANCHOR_SLOTS[slot] || ANCHOR_SLOTS.centerMid;
 }
@@ -33,11 +75,13 @@ function calculatePathStyle(startSlot, endSlot) {
     top: `${start.y}%`,
     width: `${distance}%`,
     transform: `rotate(${angle}deg)`,
+    "--path-width": `${distance}%`,
+    "--path-angle": `${angle}deg`,
   };
 }
 
 function formatTimelineLabel(item) {
-  return `${item.matchClock} ${item.eventType.replaceAll("_", " ")}`;
+  return `${item.matchClock} ${EVENT_TYPE_LABELS[item.eventType] || item.eventType}`;
 }
 
 function getTimelineItemsForScene(scene, timelineItems) {
@@ -66,6 +110,17 @@ function setSlotStyle(element, slot) {
   const anchor = getAnchor(slot);
   element.style.left = `${anchor.x}%`;
   element.style.top = `${anchor.y}%`;
+}
+
+function setBallTravelStyle(element, startSlot, endSlot) {
+  const start = getAnchor(startSlot);
+  const end = getAnchor(endSlot);
+  element.style.setProperty("--ball-start-x", `${start.x}%`);
+  element.style.setProperty("--ball-start-y", `${start.y}%`);
+  element.style.setProperty("--ball-end-x", `${end.x}%`);
+  element.style.setProperty("--ball-end-y", `${end.y}%`);
+  element.style.left = `${end.x}%`;
+  element.style.top = `${end.y}%`;
 }
 
 function renderMainPlayer(event) {
@@ -103,12 +158,12 @@ function renderMarker(player, slot, index) {
 function renderTarget(event) {
   const target = event.target;
   if (target.number) {
-    return renderMiniPlayer(target, "Target");
+    return renderMiniPlayer(target, "대상");
   }
 
   const card = createElement("article", "target-zone");
   card.innerHTML = `
-    <span>Target</span>
+    <span>대상</span>
     <strong>${target.label}</strong>
     <small>${target.role}</small>
   `;
@@ -125,14 +180,19 @@ function renderPitch(event, root) {
     "div",
     `ball-path ${event.ballPath.pathStyle.toLowerCase().replaceAll("_", "-")}`
   );
-  Object.assign(
-    path.style,
-    calculatePathStyle(event.layout.ballStartSlot, event.layout.ballEndSlot)
+  const pathStyle = calculatePathStyle(
+    event.layout.ballStartSlot,
+    event.layout.ballEndSlot
   );
+  path.style.left = pathStyle.left;
+  path.style.top = pathStyle.top;
+  path.style.width = pathStyle.width;
+  path.style.setProperty("--path-width", pathStyle.width);
+  path.style.setProperty("--path-angle", pathStyle["--path-angle"]);
   overlay.append(path);
 
   const ball = createElement("div", "ball", "");
-  setSlotStyle(ball, event.layout.ballEndSlot);
+  setBallTravelStyle(ball, event.layout.ballStartSlot, event.layout.ballEndSlot);
   overlay.append(ball);
 
   const actor = renderMarker(event.actor, event.layout.actorSlot, 0);
@@ -199,23 +259,19 @@ function renderCommentary(event, timelineItems, root) {
 
 function renderStats(event, stats, root) {
   const list = root.querySelector("[data-stats]");
-  const rows = [
-    ["Possession", `${stats.home.possession}%`, `${stats.away.possession}%`],
-    ["Shots", stats.home.shots, stats.away.shots],
-    ["On Target", stats.home.shotsOnTarget, stats.away.shotsOnTarget],
-    ["Chances", stats.home.chances, stats.away.chances],
-    ["Saves", stats.home.saves, stats.away.saves],
-  ];
+  const changedKeys = new Set(event.statEffect.changedKeys || []);
 
   list.replaceChildren(
-    ...rows.map(([label, home, away]) => {
+    ...STAT_ROWS.map((stat) => {
       const row = createElement("li", "stat-row");
-      if (event.statEffect.label.toLowerCase().includes(label.toLowerCase())) {
+      if (changedKeys.has(stat.key)) {
         row.classList.add("changed");
       }
+      const home = `${stats.home[stat.home]}${stat.suffix || ""}`;
+      const away = `${stats.away[stat.away]}${stat.suffix || ""}`;
       row.innerHTML = `
         <span>${home}</span>
-        <strong>${label}</strong>
+        <strong>${stat.label}</strong>
         <span>${away}</span>
       `;
       return row;
@@ -228,14 +284,17 @@ function renderScene(index, state) {
   state.currentIndex = index;
 
   state.root.querySelector("[data-clock]").textContent = event.matchClock;
-  state.root.querySelector("[data-phase]").textContent = state.match.phase.replace("_", " ");
-  state.root.querySelector("[data-status]").textContent = state.match.status;
+  state.root.querySelector("[data-phase]").textContent =
+    MATCH_PHASE_LABELS[state.match.phase] || state.match.phase;
+  state.root.querySelector("[data-status]").textContent =
+    MATCH_STATUS_LABELS[state.match.status] || state.match.status;
   state.root.querySelector("[data-route]").textContent = event.routeLabel;
-  state.root.querySelector("[data-event-type]").textContent = event.eventType;
+  state.root.querySelector("[data-event-type]").textContent =
+    EVENT_TYPE_LABELS[event.eventType] || event.eventType;
   state.root.querySelector("[data-commentary-lead]").textContent = event.commentary;
   state.root.querySelector("[data-stat-effect]").textContent = event.statEffect.label;
   state.root.querySelector("[data-ball-path]").textContent = [
-    event.ballPath.pathStyle.replaceAll("_", " "),
+    PATH_STYLE_LABELS[event.ballPath.pathStyle] || event.ballPath.pathStyle,
     event.ballPath.zoneHint,
     event.ballPath.timingHint,
   ].join(" / ");
@@ -257,6 +316,7 @@ function renderScene(index, state) {
   renderTimeline(event, state.timelineItems, state.root);
   renderCommentary(event, state.timelineItems, state.root);
   renderStats(event, state.stats, state.root);
+  state.root.dataset.sceneStep = String(index);
 
   state.root.querySelectorAll("[data-event-button]").forEach((button) => {
     button.classList.toggle("active", button.dataset.eventId === event.eventId);
@@ -281,7 +341,7 @@ function bindControls(state) {
 
   state.root.querySelector("[data-play]").addEventListener("click", (event) => {
     state.isPlaying = !state.isPlaying;
-    event.currentTarget.textContent = state.isPlaying ? "Pause" : "Play";
+    event.currentTarget.textContent = state.isPlaying ? "일시정지" : "재생";
     if (state.isPlaying) {
       state.timer = window.setInterval(() => {
         renderScene((state.currentIndex + 1) % state.events.length, state);
@@ -331,7 +391,7 @@ function renderEventNavigation(events, root) {
       const button = createElement(
         "button",
         "event-button",
-        event.eventType.replaceAll("_", " ")
+        EVENT_TYPE_LABELS[event.eventType] || event.eventType
       );
       button.type = "button";
       button.dataset.eventButton = "true";
@@ -369,6 +429,7 @@ function initializePlayFocusView(root, data) {
 const playFocusView = Object.freeze({
   ANCHOR_SLOTS,
   calculatePathStyle,
+  EVENT_TYPE_LABELS,
   formatTimelineLabel,
   getTimelineItemsForScene,
   initializePlayFocusView,
