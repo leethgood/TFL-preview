@@ -18,7 +18,7 @@ const ANCHOR_SLOTS = Object.freeze({
 
 const EVENT_TYPE_LABELS = Object.freeze({
   ATTACK_CREATED: "공격 시작",
-  CHANCE_CREATED: "기회 생성",
+  CHANCE_CREATED: "찬스 발생",
   DRIBBLE: "드리블",
   TACKLE: "태클",
   SHORT_PASS: "짧은 패스",
@@ -31,7 +31,7 @@ const EVENT_TYPE_LABELS = Object.freeze({
 });
 
 const MATCH_STATUS_LABELS = Object.freeze({
-  LIVE: "진행 중",
+  LIVE: "LIVE",
   READY: "대기",
   FINISHED: "종료",
 });
@@ -51,10 +51,10 @@ const PATH_STYLE_LABELS = Object.freeze({
 });
 
 const STAT_ROWS = Object.freeze([
-  Object.freeze({ key: "possession", label: "점유율", home: "possession", away: "possession", suffix: "%" }),
+  Object.freeze({ key: "possession", label: "점유", home: "possession", away: "possession", suffix: "%" }),
   Object.freeze({ key: "shots", label: "슈팅", home: "shots", away: "shots" }),
   Object.freeze({ key: "shotsOnTarget", label: "유효 슈팅", home: "shotsOnTarget", away: "shotsOnTarget" }),
-  Object.freeze({ key: "chances", label: "기회", home: "chances", away: "chances" }),
+  Object.freeze({ key: "chances", label: "찬스", home: "chances", away: "chances" }),
   Object.freeze({ key: "saves", label: "선방", home: "saves", away: "saves" }),
 ]);
 
@@ -93,6 +93,15 @@ function getTimelineItemsForScene(scene, timelineItems) {
 
 function getEventById(events, eventId) {
   return events.find((event) => event.eventId === eventId) || events[0];
+}
+
+function getSceneForTimelineItem(events, item) {
+  return getEventById(events, item.sceneEventId || item.eventId);
+}
+
+function getSequenceIndexForScene(timelineItems, sceneEventId) {
+  const index = timelineItems.findIndex((item) => item.sceneEventId === sceneEventId);
+  return index >= 0 ? index : 0;
 }
 
 function createElement(tagName, className, textContent) {
@@ -217,19 +226,19 @@ function renderPitch(event, root) {
   });
 }
 
-function renderTimeline(event, timelineItems, root) {
+function renderTimeline(activeIndex, scene, timelineItems, root) {
   const list = root.querySelector("[data-timeline]");
-  const activeIds = new Set(event.timeline.concat(event.eventId));
-
   list.replaceChildren(
-    ...timelineItems.map((item) => {
-      const row = createElement("button", "timeline-item");
-      row.type = "button";
-      row.dataset.eventId = item.eventId;
-      row.dataset.importance = item.importance;
-      if (activeIds.has(item.eventId)) {
+    ...timelineItems.map((item, index) => {
+      const row = createElement("article", "timeline-item");
+      if (index === activeIndex) {
         row.classList.add("active");
       }
+      if (item.sceneEventId === scene.eventId) {
+        row.classList.add("linked");
+      }
+      row.dataset.eventId = item.eventId;
+      row.dataset.eventType = item.eventType;
       row.innerHTML = `
         <span>${formatTimelineLabel(item)}</span>
         <strong>${item.label}</strong>
@@ -239,13 +248,16 @@ function renderTimeline(event, timelineItems, root) {
   );
 }
 
-function renderCommentary(event, timelineItems, root) {
+function renderCommentary(activeIndex, timelineItems, root) {
   const list = root.querySelector("[data-commentary]");
-  const items = getTimelineItemsForScene(event, timelineItems);
+  const startIndex = Math.max(0, activeIndex - 3);
+  const visibleItems = timelineItems.slice(startIndex, activeIndex + 1);
+
   list.replaceChildren(
-    ...items.map((item) => {
+    ...visibleItems.map((item, offset) => {
+      const rowIndex = startIndex + offset;
       const row = createElement("li", "commentary-item");
-      if (item.eventId === event.eventId) {
+      if (rowIndex === activeIndex) {
         row.classList.add("active");
       }
       row.innerHTML = `
@@ -279,85 +291,100 @@ function renderStats(event, stats, root) {
   );
 }
 
-function renderScene(index, state) {
-  const event = state.events[index];
+function renderDetails(scene, root) {
+  const actorPanel = root.querySelector("[data-actor-panel]");
+  actorPanel.replaceChildren(renderMainPlayer(scene));
+
+  const targetPanel = root.querySelector("[data-target-panel]");
+  targetPanel.replaceChildren(renderTarget(scene));
+
+  const supportersPanel = root.querySelector("[data-supporters-panel]");
+  supportersPanel.replaceChildren(
+    ...scene.supporters.map((supporter) =>
+      renderMiniPlayer(supporter, supporter.role)
+    )
+  );
+}
+
+function renderSequence(index, state) {
+  const timelineItem = state.timelineItems[index];
+  const scene = getSceneForTimelineItem(state.events, timelineItem);
   state.currentIndex = index;
 
-  state.root.querySelector("[data-clock]").textContent = event.matchClock;
+  state.root.querySelector("[data-clock]").textContent = timelineItem.matchClock;
   state.root.querySelector("[data-phase]").textContent =
     MATCH_PHASE_LABELS[state.match.phase] || state.match.phase;
   state.root.querySelector("[data-status]").textContent =
     MATCH_STATUS_LABELS[state.match.status] || state.match.status;
-  state.root.querySelector("[data-route]").textContent = event.routeLabel;
-  state.root.querySelector("[data-event-type]").textContent =
-    EVENT_TYPE_LABELS[event.eventType] || event.eventType;
-  state.root.querySelector("[data-commentary-lead]").textContent = event.commentary;
-  state.root.querySelector("[data-stat-effect]").textContent = event.statEffect.label;
+  state.root.querySelector("[data-route]").textContent = scene.routeLabel;
+  state.root.querySelector("[data-current-event-type]").textContent =
+    EVENT_TYPE_LABELS[timelineItem.eventType] || timelineItem.eventType;
+  state.root.querySelector("[data-current-event-label]").textContent =
+    timelineItem.label;
+  state.root.querySelector("[data-watch-point]").textContent =
+    timelineItem.watchPoint || scene.watchPoint;
+  state.root.querySelector("[data-current-description]").textContent =
+    scene.commentary;
+  state.root.querySelector("[data-sequence-position]").textContent =
+    `${index + 1}/${state.timelineItems.length}`;
+  state.root.querySelector("[data-stat-effect]").textContent = scene.statEffect.label;
   state.root.querySelector("[data-ball-path]").textContent = [
-    PATH_STYLE_LABELS[event.ballPath.pathStyle] || event.ballPath.pathStyle,
-    event.ballPath.zoneHint,
-    event.ballPath.timingHint,
+    PATH_STYLE_LABELS[scene.ballPath.pathStyle] || scene.ballPath.pathStyle,
+    scene.ballPath.zoneHint,
+    scene.ballPath.timingHint,
   ].join(" / ");
 
-  const actorPanel = state.root.querySelector("[data-actor-panel]");
-  actorPanel.replaceChildren(renderMainPlayer(event));
-
-  const targetPanel = state.root.querySelector("[data-target-panel]");
-  targetPanel.replaceChildren(renderTarget(event));
-
-  const supportersPanel = state.root.querySelector("[data-supporters-panel]");
-  supportersPanel.replaceChildren(
-    ...event.supporters.map((supporter) =>
-      renderMiniPlayer(supporter, supporter.role)
-    )
-  );
-
-  renderPitch(event, state.root);
-  renderTimeline(event, state.timelineItems, state.root);
-  renderCommentary(event, state.timelineItems, state.root);
-  renderStats(event, state.stats, state.root);
-  state.root.dataset.sceneStep = String(index);
+  renderPitch(scene, state.root);
+  renderDetails(scene, state.root);
+  renderTimeline(index, scene, state.timelineItems, state.root);
+  renderCommentary(index, state.timelineItems, state.root);
+  renderStats(scene, state.stats, state.root);
+  state.root.dataset.sequenceStep = String(index);
+  state.root.dataset.pitchScene = scene.eventType;
 
   state.root.querySelectorAll("[data-event-button]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.eventId === event.eventId);
+    button.classList.toggle("active", button.dataset.eventId === scene.eventId);
   });
 }
 
+function advanceSequence(state) {
+  const nextIndex = (state.currentIndex + 1) % state.timelineItems.length;
+  renderSequence(nextIndex, state);
+}
+
+function startPlayback(state) {
+  window.clearInterval(state.timer);
+  state.isPlaying = true;
+  state.root.querySelector("[data-play]").textContent = "일시정지";
+  state.timer = window.setInterval(() => advanceSequence(state), state.speed);
+}
+
+function stopPlayback(state) {
+  state.isPlaying = false;
+  state.root.querySelector("[data-play]").textContent = "재생";
+  window.clearInterval(state.timer);
+}
+
 function bindControls(state) {
-  state.root.querySelector("[data-prev]").addEventListener("click", () => {
-    const nextIndex =
-      (state.currentIndex - 1 + state.events.length) % state.events.length;
-    renderScene(nextIndex, state);
-  });
-
-  state.root.querySelector("[data-next]").addEventListener("click", () => {
-    const nextIndex = (state.currentIndex + 1) % state.events.length;
-    renderScene(nextIndex, state);
-  });
-
   state.root.querySelector("[data-replay]").addEventListener("click", () => {
-    renderScene(0, state);
+    renderSequence(0, state);
+    if (state.isPlaying) {
+      startPlayback(state);
+    }
   });
 
-  state.root.querySelector("[data-play]").addEventListener("click", (event) => {
-    state.isPlaying = !state.isPlaying;
-    event.currentTarget.textContent = state.isPlaying ? "일시정지" : "재생";
+  state.root.querySelector("[data-play]").addEventListener("click", () => {
     if (state.isPlaying) {
-      state.timer = window.setInterval(() => {
-        renderScene((state.currentIndex + 1) % state.events.length, state);
-      }, state.speed);
-    } else {
-      window.clearInterval(state.timer);
+      stopPlayback(state);
+      return;
     }
+    startPlayback(state);
   });
 
   state.root.querySelector("[data-speed]").addEventListener("change", (event) => {
     state.speed = Number(event.target.value);
     if (state.isPlaying) {
-      window.clearInterval(state.timer);
-      state.timer = window.setInterval(() => {
-        renderScene((state.currentIndex + 1) % state.events.length, state);
-      }, state.speed);
+      startPlayback(state);
     }
   });
 
@@ -366,20 +393,13 @@ function bindControls(state) {
     if (!button) {
       return;
     }
-    const nextEvent = getEventById(state.events, button.dataset.eventId);
-    renderScene(state.events.indexOf(nextEvent), state);
-  });
-
-  state.root.querySelector("[data-timeline]").addEventListener("click", (event) => {
-    const row = event.target.closest("[data-event-id]");
-    if (!row) {
-      return;
-    }
-    const linkedScene = state.events.find((scene) =>
-      scene.timeline.includes(row.dataset.eventId)
+    const nextIndex = getSequenceIndexForScene(
+      state.timelineItems,
+      button.dataset.eventId
     );
-    if (linkedScene) {
-      renderScene(state.events.indexOf(linkedScene), state);
+    renderSequence(nextIndex, state);
+    if (state.isPlaying) {
+      startPlayback(state);
     }
   });
 }
@@ -421,7 +441,8 @@ function initializePlayFocusView(root, data) {
 
   renderEventNavigation(state.events, root);
   bindControls(state);
-  renderScene(0, state);
+  renderSequence(0, state);
+  startPlayback(state);
 
   return state;
 }
@@ -431,6 +452,7 @@ const playFocusView = Object.freeze({
   calculatePathStyle,
   EVENT_TYPE_LABELS,
   formatTimelineLabel,
+  getSceneForTimelineItem,
   getTimelineItemsForScene,
   initializePlayFocusView,
 });

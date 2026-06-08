@@ -93,13 +93,23 @@ function person(playerRef, role) {
   });
 }
 
-function timelineItem(eventId, matchClock, eventType, label, importance) {
+function timelineItem(
+  eventId,
+  matchClock,
+  eventType,
+  label,
+  importance,
+  sceneEventId,
+  watchPoint
+) {
   return Object.freeze({
     eventId,
     matchClock,
     eventType,
     label,
     importance,
+    sceneEventId,
+    watchPoint,
   });
 }
 
@@ -109,77 +119,90 @@ const sampleTimeline = Object.freeze([
     "71:45",
     "ATTACK_CREATED",
     "홈 팀 공격이 오른쪽 측면에서 시작됩니다.",
-    "LOW"
+    "LOW",
+    "scene-dribble",
+    "공격 흐름이 어디에서 시작되고, 다음 드리블 장면으로 어떻게 연결되는지 확인하세요."
   ),
   timelineItem(
     "scene-dribble",
     "72:15",
     "DRIBBLE",
     "홈 7번이 빈 공간으로 드리블합니다.",
-    "MEDIUM"
+    "MEDIUM",
+    "scene-dribble",
+    "볼 운반 선수, 전방 빈 공간, 추격 수비의 위치를 확인하세요."
   ),
   timelineItem(
     "scene-tackle",
     "72:45",
     "TACKLE",
     "원정 6번이 태클로 공을 끊어냅니다.",
-    "MEDIUM"
+    "MEDIUM",
+    "scene-tackle",
+    "태클 actor와 볼 운반 target, 공 소유권이 바뀌는 지점을 확인하세요."
   ),
   timelineItem(
     "scene-pass",
     "73:30",
     "SHORT_PASS",
     "홈 8번이 중앙으로 짧은 패스를 연결합니다.",
-    "MEDIUM"
+    "MEDIUM",
+    "scene-pass",
+    "패스 actor에서 target으로 이어지는 짧은 공 이동선을 확인하세요."
   ),
   timelineItem(
     "flow-074-chance",
     "74:00",
     "CHANCE_CREATED",
     "공격 흐름이 득점 기회로 이어집니다.",
-    "HIGH"
+    "HIGH",
+    "scene-cross",
+    "찬스 발생은 별도 pitch 장면이 아니라 다음 크로스 장면의 위험도 힌트로 연결됩니다."
   ),
   timelineItem(
     "scene-cross",
     "74:10",
     "CROSS",
     "홈 11번이 박스 안으로 크로스를 올립니다.",
-    "HIGH"
+    "HIGH",
+    "scene-cross",
+    "측면 선수의 크로스, 박스 안 대상 선수, 골키퍼 반응을 확인하세요."
   ),
   timelineItem(
     "scene-shot",
     "74:25",
     "SHOT",
     "홈 9번이 가까운 골문 쪽으로 슛합니다.",
-    "HIGH"
+    "HIGH",
+    "scene-shot",
+    "슈터에서 골문으로 향하는 공 이동과 수비/골키퍼 위치를 확인하세요."
   ),
   timelineItem(
     "result-shot-on-target",
     "74:26",
     "SHOT_ON_TARGET",
     "유효 슈팅으로 기록됩니다.",
-    "HIGH"
+    "HIGH",
+    "scene-shot",
+    "유효 슈팅은 별도 pitch 장면이 아니라 슈팅 장면의 결과 힌트로 표시됩니다."
   ),
   timelineItem(
     "result-save",
     "74:27",
     "SAVE",
     "원정 1번 골키퍼가 선방합니다.",
-    "HIGH"
+    "HIGH",
+    "scene-shot",
+    "선방은 슈팅 장면의 결과와 기록 변화로 연결되는지 확인하세요."
   ),
   timelineItem(
     "scene-goal",
     "78:00",
     "GOAL",
     "홈 10번이 득점합니다.",
-    "HIGHEST"
-  ),
-  timelineItem(
-    "label-foul",
-    "82:15",
-    "FOUL",
-    "파울은 타임라인 참고 정보로만 표시됩니다.",
-    "LOW"
+    "HIGHEST",
+    "scene-goal",
+    "득점 선수, 골문 target, 스코어 갱신 힌트가 함께 보이는지 확인하세요."
   ),
 ]);
 
@@ -216,6 +239,7 @@ const sampleEvents = Object.freeze([
       pitchEffect: "progress-lane",
     }),
     commentary: "홈 7번이 공을 몰고 전진하며 수비 라인을 뒤로 밀어냅니다.",
+    watchPoint: "볼 운반 선수, 전방 빈 공간, 추격 수비의 위치를 확인하세요.",
     timeline: Object.freeze(["flow-071-attack", "scene-dribble"]),
     statEffect: Object.freeze({
       type: "FLOW",
@@ -258,6 +282,7 @@ const sampleEvents = Object.freeze([
       pitchEffect: "contact-burst",
     }),
     commentary: "원정 6번이 타이밍 좋게 태클해 공을 원정 팀 쪽으로 밀어냅니다.",
+    watchPoint: "태클 actor와 볼 운반 target, 공 소유권이 바뀌는 지점을 확인하세요.",
     timeline: Object.freeze(["scene-tackle"]),
     statEffect: Object.freeze({
       type: "FLOW",
@@ -300,6 +325,7 @@ const sampleEvents = Object.freeze([
       pitchEffect: "pass-thread",
     }),
     commentary: "홈 8번이 라인 사이로 들어간 홈 10번에게 짧은 패스를 넣습니다.",
+    watchPoint: "패스 actor에서 target으로 이어지는 짧은 공 이동선을 확인하세요.",
     timeline: Object.freeze(["scene-pass", "flow-074-chance"]),
     statEffect: Object.freeze({
       type: "FLOW",
@@ -343,6 +369,7 @@ const sampleEvents = Object.freeze([
       pitchEffect: "arc-delivery",
     }),
     commentary: "홈 11번이 박스 안 홈 9번을 향해 빠르게 크로스를 올립니다.",
+    watchPoint: "측면 선수의 크로스, 박스 안 대상 선수, 골키퍼 반응을 확인하세요.",
     timeline: Object.freeze(["flow-074-chance", "scene-cross"]),
     statEffect: Object.freeze({
       type: "CHANCE",
@@ -389,6 +416,7 @@ const sampleEvents = Object.freeze([
       pitchEffect: "goal-tension",
     }),
     commentary: "홈 9번의 슈팅이 골문으로 향하지만 원정 1번이 반응해 막아냅니다.",
+    watchPoint: "슈터에서 골문으로 향하는 공 이동과 유효 슈팅 / 선방 연결을 확인하세요.",
     timeline: Object.freeze(["scene-shot", "result-shot-on-target", "result-save"]),
     statEffect: Object.freeze({
       type: "SHOT_SAVE",
@@ -432,6 +460,7 @@ const sampleEvents = Object.freeze([
       pitchEffect: "goal-flash",
     }),
     commentary: "골입니다. 홈 10번이 낮고 빠르게 마무리하며 점수가 바뀝니다.",
+    watchPoint: "득점 선수, 골문 target, 스코어 갱신 힌트가 함께 보이는지 확인하세요.",
     timeline: Object.freeze(["scene-goal"]),
     statEffect: Object.freeze({
       type: "GOAL",
@@ -474,6 +503,7 @@ function validateSampleEvent(event) {
     "ballPath",
     "displayHint",
     "commentary",
+    "watchPoint",
     "timeline",
     "statEffect",
   ];
